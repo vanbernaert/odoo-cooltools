@@ -1,0 +1,27 @@
+/* Keep the field itself unchanged */
+.o_field_many2one {
+    max-width: 100%;
+}
+
+/* ONLY the dropdown menu */
+.o-autocomplete--dropdown {
+    min-width: 650px !important;
+    max-width: 1200px !important;
+
+    /* Allow it to overlap other form elements */
+    position: absolute !important;
+    z-index: 1050 !important;
+}
+
+/* Ensure parent containers don’t clip it */
+.o_form_sheet,
+.o_form_sheet_bg,
+.o_form_view {
+    overflow: visible !important;
+}
+
+/* Wrap long hierarchy names nicely */
+.o-autocomplete--dropdown .dropdown-item {
+    white-space: normal !important;
+    word-break: break-word;
+}
