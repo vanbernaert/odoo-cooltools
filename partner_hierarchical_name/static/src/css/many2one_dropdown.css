@@ -1,27 +1,24 @@
-/* Keep the field itself unchanged */
-.o_field_many2one {
-    max-width: 100%;
-}
-
-/* ONLY the dropdown menu */
-.o-autocomplete--dropdown {
+/* jQuery UI autocomplete dropdown (authoritative override) */
+.ui-autocomplete {
     min-width: 650px !important;
-    max-width: 1200px !important;
+    max-width: 900px !important;
 
-    /* Allow it to overlap other form elements */
-    position: absolute !important;
-    z-index: 1050 !important;
+    /* Float above form & right column */
+    z-index: 1100 !important;
+
+    /* Allow multi-line hierarchy */
+    white-space: normal !important;
 }
 
-/* Ensure parent containers don’t clip it */
-.o_form_sheet,
-.o_form_sheet_bg,
-.o_form_view {
-    overflow: visible !important;
-}
-
-/* Wrap long hierarchy names nicely */
-.o-autocomplete--dropdown .dropdown-item {
+/* Ensure individual items wrap */
+.ui-autocomplete .ui-menu-item-wrapper {
     white-space: normal !important;
     word-break: break-word;
+}
+
+/* Prevent clipping by form containers */
+.o_form_view,
+.o_form_sheet,
+.o_form_sheet_bg {
+    overflow: visible !important;
 }
