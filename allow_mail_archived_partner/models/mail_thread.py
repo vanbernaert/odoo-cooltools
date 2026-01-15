@@ -11,7 +11,6 @@ class MailThread(models.AbstractModel):
         _logger.info("=== DEBUG _notify_thread START ===")
         _logger.info(f"Model: {self._name}")
         _logger.info(f"Record IDs: {self.ids}")
-        _logger.info(f"Full context: {dict(self.env.context)}")
         
         if self._name in ("sale.order", "account.move"):
             # Add context flags for partner searches
@@ -26,95 +25,88 @@ class MailThread(models.AbstractModel):
         _logger.info("=== DEBUG _notify_thread END ===")
         return result
 
+    def _message_get_default_recipients(self):
+        """CRITICAL: Include archived partners in default recipients"""
+        _logger.info("=== DEBUG _message_get_default_recipients START ===")
+        _logger.info(f"Model: {self._name}")
+        _logger.info(f"Context before: {dict(self.env.context)}")
+        
+        if self._name in ("sale.order", "account.move"):
+            # Add context BEFORE calling parent
+            self = self.with_context(
+                active_test=False,
+                include_archived_partners=True
+            )
+            _logger.info(f"Context after: {dict(self.env.context)}")
+        
+        res = super()._message_get_default_recipients()
+        
+        _logger.info(f"Default recipients result for records {self.ids}:")
+        for record in self:
+            if record.id in res:
+                recipients = res[record.id]
+                _logger.info(f"  Record {record.id} has {len(recipients)} recipients")
+                for partner_id, recipient_data in recipients.items():
+                    _logger.info(f"    Partner {partner_id}: {recipient_data}")
+            else:
+                _logger.info(f"  Record {record.id} has NO recipients in result")
+                
+                # Manually add the partner if missing
+                if record.partner_id:
+                    _logger.info(f"    But record has partner_id: {record.partner_id.id}")
+                    partner = self.env['res.partner'].with_context(
+                        active_test=False
+                    ).browse(record.partner_id.id)
+                    
+                    if partner.exists():
+                        res[record.id] = {
+                            partner.id: {
+                                'partner_id': partner.id,
+                                'email': partner.email,
+                                'name': partner.name,
+                            }
+                        }
+                        _logger.info(f"    Added partner manually: {partner.id} - {partner.email}")
+        
+        _logger.info("=== DEBUG _message_get_default_recipients END ===")
+        return res
+
     def _notify_get_recipients(self, message, msg_vals, **kwargs):
         """Ensure archived partners are included as recipients"""
-        # DEBUG LOGGING START
-        _logger.info("=" * 50)
         _logger.info("=== DEBUG _notify_get_recipients START ===")
         _logger.info(f"Model: {self._name}")
-        _logger.info(f"Record IDs: {self.ids}")
-        _logger.info(f"Context keys: {list(self.env.context.keys())}")
-        _logger.info(f"Has active_test=False: {self.env.context.get('active_test') == False}")
-        _logger.info(f"Has mail_notification: {self.env.context.get('mail_notification')}")
-        # DEBUG LOGGING END
+        _logger.info(f"Context: {dict(self.env.context)}")
         
         # Get recipients normally
         recipients = super()._notify_get_recipients(message, msg_vals, **kwargs)
         
-        # DEBUG: Log what we got from parent
-        _logger.info(f"=== Parent returned {len(recipients)} recipients ===")
-        for i, recipient in enumerate(recipients):
-            _logger.info(f"Recipient {i}: partner_id={recipient.get('partner_id')}, "
-                        f"email={recipient.get('email')}, "
-                        f"notifications={recipient.get('notifications')}, "
-                        f"type={recipient.get('type')}")
+        _logger.info(f"Parent returned {len(recipients)} recipients")
         
-        # Only process for sales orders and invoices
-        if self._name in ("sale.order", "account.move"):
-            _logger.info("=== Processing sales/invoice recipients ===")
+        if self._name in ("sale.order", "account.move") and not recipients:
+            _logger.info("NO RECIPIENTS FOUND - trying manual fallback")
             
-            for i, recipient in enumerate(recipients):
-                partner_id = recipient.get('partner_id')
-                if partner_id:
-                    # Re-fetch partner without active filter
+            # Manual fallback: get partner from the record
+            for record in self:
+                if record.partner_id:
                     partner = self.env['res.partner'].with_context(
                         active_test=False
-                    ).browse(partner_id)
+                    ).browse(record.partner_id.id)
                     
-                    _logger.info(f"Recipient {i} - Partner ID {partner_id}: "
-                                f"exists={partner.exists()}, "
-                                f"active={partner.active if partner.exists() else 'N/A'}, "
-                                f"email={partner.email if partner.exists() else 'N/A'}, "
-                                f"name={partner.name if partner.exists() else 'N/A'}")
-                    
-                    if partner.exists():
-                        # Update recipient data
-                        recipient.update({
+                    if partner.exists() and partner.email:
+                        _logger.info(f"Creating recipient for partner {partner.id}")
+                        recipients = [{
+                            'id': partner.id,
+                            'partner_id': partner.id,
+                            'email': partner.email,
+                            'name': partner.name,
                             'partner': partner,
                             'active_partner': partner,
                             'shared_partner': partner,
                             'is_partner': True,
-                        })
-                        
-                        # Ensure email is set
-                        if not recipient.get('email') and partner.email:
-                            recipient['email'] = partner.email
-                            _logger.info(f"  -> Set email to: {partner.email}")
-                            
-                        # Ensure notifications are enabled
-                        if recipient.get('notifications') != 'email':
-                            recipient['notifications'] = 'email'
-                            _logger.info(f"  -> Set notifications to 'email'")
-                else:
-                    _logger.info(f"Recipient {i}: No partner_id (email: {recipient.get('email')})")
+                            'notifications': 'email',
+                            'type': 'customer',
+                        }]
         
-        # DEBUG: Final result
-        _logger.info(f"=== Final: Returning {len(recipients)} recipients ===")
-        for i, recipient in enumerate(recipients):
-            _logger.info(f"Final Recipient {i}: partner_id={recipient.get('partner_id')}, "
-                        f"email={recipient.get('email')}, "
-                        f"notifications={recipient.get('notifications')}")
-        
+        _logger.info(f"Final: Returning {len(recipients)} recipients")
         _logger.info("=== DEBUG _notify_get_recipients END ===")
-        _logger.info("=" * 50)
         return recipients
-
-    def _message_get_default_recipients(self):
-        """Include archived partners in default recipients"""
-        _logger.info("=== DEBUG _message_get_default_recipients ===")
-        _logger.info(f"Model: {self._name}")
-        
-        res = super()._message_get_default_recipients()
-        
-        if self._name in ("sale.order", "account.move"):
-            _logger.info("Processing sales/invoice default recipients")
-            
-            for record in self:
-                if record.id in res:
-                    recipients = res[record.id]
-                    _logger.info(f"Record {record.id} has {len(recipients)} default recipients")
-                    
-                    for partner_id, recipient_data in recipients.items():
-                        _logger.info(f"  Partner {partner_id}: {recipient_data}")
-        
-        return res
