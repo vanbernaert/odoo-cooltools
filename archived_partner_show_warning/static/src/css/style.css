@@ -1,0 +1,18 @@
+/* Custom styling for archived partner warning */
+.archived-warning-custom {
+    margin: -20px 00 5px 0;
+    
+    padding-top: 13px;
+    border-left: 4px solid #f0ad4e;
+    background: linear-gradient(135deg, #fcf8e3 0%, #faf2cc 100%);
+    
+}
+
+.archived-warning-custom i {
+    font-size: 18px;
+    margin-right: 5px;
+}
+
+.archived-warning-custom strong {
+    font-size: 14px;
+}
