@@ -16,10 +16,10 @@
                     <div class="col-12">
                       <div class="alert alert-warning archived-warning-custom">
                         <i class="fa fa-exclamation-triangle mr-2"></i>
-                        <strong string="Warning:">Warning:</strong>
-                        <span string="This customer is archived.">
-                            This customer is archived.
-                        </span>
+                        <!-- TRANSLATORS: Warning label for archived customers -->
+                        <strong>Warning: </strong>
+                        <!-- TRANSLATORS: Warning message for archived customers -->
+                        <span>This customer is archived.</span>
                     </div>
 
 
