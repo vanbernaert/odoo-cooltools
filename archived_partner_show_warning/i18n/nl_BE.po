@@ -1,0 +1,50 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* archived_partner_show_warning
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 16.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-01-15 18:10+0000\n"
+"PO-Revision-Date: 2026-01-15 19:15+0100\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: nl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.6\n"
+
+#. module: archived_partner_show_warning
+#: model_terms:ir.ui.view,arch_db:archived_partner_show_warning.view_move_form_archived_warning
+#: model_terms:ir.ui.view,arch_db:archived_partner_show_warning.view_order_form_archived_warning
+msgid "<span>This customer is archived.</span>"
+msgstr ""
+"<span>De klant is gearchiveerd (geïmporteerd van vorige Odoo). Ga na of dit "
+"aangepast moet worden naar een nieuwe klantenfiche.</span>"
+
+#. module: archived_partner_show_warning
+#: model_terms:ir.ui.view,arch_db:archived_partner_show_warning.view_move_form_archived_warning
+#: model_terms:ir.ui.view,arch_db:archived_partner_show_warning.view_order_form_archived_warning
+msgid "<strong>Warning: </strong>"
+msgstr "<strong>Opgelet: </strong>"
+
+#. module: archived_partner_show_warning
+#: model:ir.model,name:archived_partner_show_warning.model_account_move
+msgid "Journal Entry"
+msgstr "Boeking"
+
+#. module: archived_partner_show_warning
+#: model:ir.model.fields,field_description:archived_partner_show_warning.field_account_bank_statement_line__partner_is_archived
+#: model:ir.model.fields,field_description:archived_partner_show_warning.field_account_move__partner_is_archived
+#: model:ir.model.fields,field_description:archived_partner_show_warning.field_account_payment__partner_is_archived
+#: model:ir.model.fields,field_description:archived_partner_show_warning.field_sale_order__partner_is_archived
+msgid "Partner Archived"
+msgstr ""
+
+#. module: archived_partner_show_warning
+#: model:ir.model,name:archived_partner_show_warning.model_sale_order
+msgid "Sales Order"
+msgstr "Verkooporder"

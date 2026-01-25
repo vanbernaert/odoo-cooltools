@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_form_archived_warning" model="ir.ui.view">
+        <field name="name">sale.order.form.archived.warning</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <!-- Add field somewhere in the view first -->
+            <xpath expr="//field[@name='partner_id']" position="before">
+                <field name="partner_is_archived" invisible="1"/>
+            </xpath>
+            
+            <!-- Warning after oe_title -->
+            <xpath expr="//div[@class='oe_title']" position="after">
+                <div class="row" attrs="{'invisible': [('partner_is_archived', '=', False)]}" >
+                    <div class="col-12">
+                      <div class="alert alert-warning archived-warning-custom">
+                        <i class="fa fa-exclamation-triangle mr-2"></i>
+                        <!-- TRANSLATORS: Warning label for archived customers -->
+                        <strong>Warning: </strong>
+                        <!-- TRANSLATORS: Warning message for archived customers -->
+                        <span>This customer is archived.</span>
+                    </div>
+
+
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

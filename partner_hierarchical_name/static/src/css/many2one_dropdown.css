@@ -1,0 +1,24 @@
+/* jQuery UI autocomplete dropdown (authoritative override) */
+.ui-autocomplete {
+    min-width: 650px !important;
+    max-width: 900px !important;
+
+    /* Float above form & right column */
+    z-index: 1100 !important;
+
+    /* Allow multi-line hierarchy */
+    white-space: normal !important;
+}
+
+/* Ensure individual items wrap */
+.ui-autocomplete .ui-menu-item-wrapper {
+    white-space: normal !important;
+    word-break: break-word;
+}
+
+/* Prevent clipping by form containers */
+.o_form_view,
+.o_form_sheet,
+.o_form_sheet_bg {
+    overflow: visible !important;
+}
