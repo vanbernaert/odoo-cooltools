@@ -8,41 +8,30 @@ class ResPartner(models.Model):
     _inherit = "res.partner"
 
     @api.model
-    def _search(
-        self,
-        args,
-        offset=0,
-        limit=None,
-        order=None,
-        count=False,
-        access_rights_uid=None
-    ):
+    def _search(self, args, offset=0, limit=None, order=None, count=False, access_rights_uid=None):
         """
-        Only include archived partners when the caller explicitly opts in via:
-            context['include_archived_partners'] = True
-
-        Never key off fragile string matches like 'mail'/'notify'/'message'.
+        DEBUG search method
         """
-        if self.env.context.get("include_archived_partners"):
-            # Remove explicit active=True filters only (do not touch other domains)
+        _logger.info("=== RES.PARTNER _search ===")
+        _logger.info(f"Search args before: {args}")
+        _logger.info(f"Context include_archived: {self.env.context.get('include_archived_partners')}")
+        _logger.info(f"Context active_test: {self.env.context.get('active_test')}")
+        _logger.info(f"Context mail_notify_force: {self.env.context.get('mail_notify_force')}")
+        
+        if self.env.context.get("include_archived_partners") or self.env.context.get("mail_notify_force"):
+            _logger.info("Context flags found - removing active filters")
+            # Remove active filters
             args = [
                 arg for arg in args
                 if not (
                     isinstance(arg, (list, tuple))
                     and len(arg) == 3
                     and arg[0] == "active"
-                    and arg[1] == "="
-                    and arg[2] is True
                 )
             ]
-            # Also ensure active_test is off so ORM won't auto-filter archived partners
             self = self.with_context(active_test=False)
-
-        return super()._search(
-            args,
-            offset=offset,
-            limit=limit,
-            order=order,
-            count=count,
-            access_rights_uid=access_rights_uid
-        )
+            _logger.info(f"Search args after: {args}")
+        
+        result = super()._search(args, offset, limit, order, count, access_rights_uid)
+        _logger.info(f"Search result: {result[:10] if not count else 'count='+str(result)}")
+        return result
