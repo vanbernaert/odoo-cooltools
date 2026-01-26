@@ -1,6 +1,3 @@
-import logging
-_logger = logging.getLogger(__name__)
-
 from odoo import models, api
 
 
@@ -13,8 +10,6 @@ class MailComposeMessage(models.TransientModel):
         Pre-fill email wizard with archived partners for sales orders.
         For invoices, this is handled by account.invoice.send.
         """
-        _logger.debug("=== MAIL.COMPOSE.MESSAGE DEFAULT_GET ===")
-        
         res = super().default_get(fields)
         
         model = self.env.context.get("active_model")
@@ -22,8 +17,6 @@ class MailComposeMessage(models.TransientModel):
         
         # Only handle sales orders here - invoices use account.invoice.send
         if model == "sale.order" and res_id:
-            _logger.debug(f"Processing sales order {res_id}")
-            
             # Find order with archived partners allowed
             order = self.env["sale.order"].with_context(
                 active_test=False
@@ -31,7 +24,6 @@ class MailComposeMessage(models.TransientModel):
             
             if order.exists() and order.partner_id:
                 res["partner_ids"] = [(6, 0, [order.partner_id.id])]
-                _logger.debug(f"Pre-filled archived partner {order.partner_id.id} for sales order")
         
         return res
 
@@ -40,14 +32,11 @@ class MailComposeMessage(models.TransientModel):
         Set context flags for manual email sends.
         This ensures archived partners are allowed during email sending.
         """
-        _logger.debug("=== _prepare_mail_values ===")
-        
         model = self.env.context.get("active_model") or self.model
         
         # Only for sales orders and account moves (invoices)
         # Note: account.invoice.send should handle invoices, but keep this as fallback
         if model in ["sale.order", "account.move"]:
-            _logger.debug(f"Setting context for {model} to allow archived partners")
             return super(
                 MailComposeMessage,
                 self.with_context(
@@ -74,7 +63,6 @@ class MailComposeMessage(models.TransientModel):
         
         # If it's a manual send and partner is archived, include them
         if is_manual_send and partner and not partner.active:
-            _logger.debug(f"Including archived partner {partner.name} in email")
             return {
                 "partner_id": partner.id,
                 "email": partner.email,
@@ -84,20 +72,3 @@ class MailComposeMessage(models.TransientModel):
         
         # Default behavior for active partners or non-manual sends
         return super()._prepare_recipient_values(partner)
-    
-    
-    def action_send_mail(self):
-        """
-        Log when email is actually sent.
-        """
-        _logger.info("🔥 MAIL.COMPOSE.MESSAGE action_send_mail")
-        _logger.info(f"Partner IDs: {self.partner_ids.ids}")
-        _logger.info(f"Context: {dict(self.env.context)}")
-        return super().action_send_mail()
-
-    def _action_send_mail(self, auto_commit=False):
-        """
-        Another possible send method.
-        """
-        _logger.info("🔥 MAIL.COMPOSE.MESSAGE _action_send_mail")
-        return super()._action_send_mail(auto_commit=auto_commit)

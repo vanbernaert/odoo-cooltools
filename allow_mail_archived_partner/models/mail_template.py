@@ -1,6 +1,3 @@
-import logging
-_logger = logging.getLogger(__name__)
-
 from odoo import models
 
 
@@ -10,8 +7,7 @@ class MailTemplate(models.Model):
     def generate_email(self, res_ids, fields=None):
         """
         Only allow archived partners when *explicitly* sending through a flow
-        that sets:
-            context['mail_notify_force'] = True
+        that sets context['mail_notify_force'] = True.
 
         This prevents system notifications from inheriting your relaxed rules.
         """
