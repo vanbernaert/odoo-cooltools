@@ -19,6 +19,11 @@ class MailThread(models.AbstractModel):
         _logger.error(f"🔥 Message subject: {getattr(message, 'subject', 'No subject')}")
         _logger.error(f"🔥 Context: {dict(self.env.context)}")
         
+        # Check message attributes
+        _logger.error(f"🔥 Message author_id: {getattr(message, 'author_id', None)}")
+        _logger.error(f"🔥 Message partner_ids: {getattr(message, 'partner_ids', None)}")
+        _logger.error(f"🔥 Message record: {message.model if hasattr(message, 'model') else 'N/A'} {message.res_id if hasattr(message, 'res_id') else 'N/A'}")
+        
         return super()._notify_thread(message, msg_vals=msg_vals, **kwargs)
 
     def _notify_get_recipients(self, message, msg_vals, **kwargs):
@@ -116,12 +121,27 @@ class MailThread(models.AbstractModel):
 
     def message_post(self, **kwargs):
         """
-        Log when messages are posted via chatter.
+        Override to ensure partner_ids are passed from context when empty.
         """
         _logger.error("🔥🔥🔥 MailThread.message_post CALLED 🔥🔥🔥")
         _logger.error(f"🔥 Model: {self._name}")
         _logger.error(f"🔥 Kwargs keys: {kwargs.keys()}")
         _logger.error(f"🔥 Context: {dict(self.env.context)}")
         _logger.error(f"🔥 Partner IDs in kwargs: {kwargs.get('partner_ids', [])}")
+        
+        # Check if we have partner_ids from context (passed from account.invoice.send)
+        context_partner_ids = self.env.context.get('invoice_partner_ids', [])
+        if context_partner_ids and not kwargs.get('partner_ids'):
+            _logger.error(f"🔥 Using partner_ids from context: {context_partner_ids}")
+            kwargs['partner_ids'] = [(6, 0, context_partner_ids)]
+        
+        # Also check for other sources of partner_ids
+        if not kwargs.get('partner_ids'):
+            # Try to get from the record itself
+            if self and hasattr(self, 'partner_id'):
+                _logger.error(f"🔥 Getting partner_id from record: {self.partner_id.id}")
+                kwargs['partner_ids'] = [(6, 0, [self.partner_id.id])]
+        
+        _logger.error(f"🔥 Final partner_ids being passed: {kwargs.get('partner_ids', [])}")
         
         return super().message_post(**kwargs)
