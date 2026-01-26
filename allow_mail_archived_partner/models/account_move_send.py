@@ -7,6 +7,14 @@ from odoo import models, api, fields
 class AccountInvoiceSend(models.TransientModel):
     _inherit = "account.invoice.send"
 
+    # OVERRIDE THE FIELD DEFINITION
+    partner_ids = fields.Many2many(
+        'res.partner',
+        string='Recipients',
+        help='Contacts of the invoice that will receive the email.',
+        context={'active_test': False},
+        check_company=True,
+    )
 
     @api.model
     def default_get(self, fields):
