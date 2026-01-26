@@ -1,47 +1,45 @@
-import logging
-_logger = logging.getLogger(__name__)
-
-from odoo import models, api
-
-
-class ResPartner(models.Model):
-    _inherit = "res.partner"
-
-    @api.model
-    def _search(self, args, offset=0, limit=None, order=None, count=False, access_rights_uid=None):
-        """
-        DEBUG search method - FIXED for Odoo 16 Query object
-        """
-        _logger.info("=== RES.PARTNER _search ===")
-        _logger.info(f"Search args before: {args}")
-        _logger.info(f"Context include_archived: {self.env.context.get('include_archived_partners')}")
-        _logger.info(f"Context active_test: {self.env.context.get('active_test')}")
+@api.model
+def _search(self, args, offset=0, limit=None, order=None, count=False, access_rights_uid=None):
+    """
+    Allow archived partners when context permits.
+    """
+    _logger.debug("=== RES.PARTNER _search ===")
+    _logger.debug(f"Search args before: {args}")
+    
+    # Check if we should include archived partners
+    include_archived = (
+        self.env.context.get("include_archived_partners") or
+        self.env.context.get("mail_notify_force") or
+        self.env.context.get("force_email") or
+        self.env.context.get("mark_invoice_as_sent")
+    )
+    
+    if include_archived:
+        _logger.debug("Context flags found - allowing archived partners")
         
-        if self.env.context.get("include_archived_partners") or self.env.context.get("mail_notify_force"):
-            _logger.info("Context flags found - removing active filters")
-            # Remove active filters
-            args = [
-                arg for arg in args
-                if not (
-                    isinstance(arg, (list, tuple))
-                    and len(arg) == 3
-                    and arg[0] == "active"
-                )
-            ]
-            self = self.with_context(active_test=False)
-            _logger.info(f"Search args after: {args}")
+        # Remove both active and partner_share filters for archived partners
+        filtered_args = []
+        for arg in args:
+            # Skip active=True/False filters
+            if isinstance(arg, (list, tuple)) and len(arg) == 3:
+                if arg[0] == "active":
+                    _logger.debug(f"Removing active filter: {arg}")
+                    continue
+                # Also skip partner_share filter when looking for specific archived partners
+                if arg[0] == "partner_share" and arg[1] == "=" and arg[2] is True:
+                    _logger.debug(f"Removing partner_share filter: {arg}")
+                    continue
+            
+            filtered_args.append(arg)
         
-        # Call parent
-        result = super()._search(args, offset, limit, order, count, access_rights_uid)
-        
-        # FIX: Don't try to slice Query object
-        if not count:
-            # Convert to list to check results (only for debugging)
-            result_ids = list(result)
-            _logger.info(f"Search returned {len(result_ids)} results")
-            if result_ids:
-                _logger.info(f"First few result IDs: {result_ids[:10]}")
-        else:
-            _logger.info(f"Search count result: {result}")
-        
-        return result
+        args = filtered_args
+        self = self.with_context(active_test=False)
+        _logger.debug(f"Search args after: {args}")
+    
+    result = super()._search(args, offset, limit, order, count, access_rights_uid)
+    
+    if not count:
+        result_ids = list(result)
+        _logger.debug(f"Search returned {len(result_ids)} results")
+    
+    return result
