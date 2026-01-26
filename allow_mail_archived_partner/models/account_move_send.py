@@ -7,37 +7,23 @@ from odoo import models, api, fields
 class AccountInvoiceSend(models.TransientModel):
     _inherit = "account.invoice.send"
 
-    # OVERRIDE THE FIELD DEFINITION
-    partner_ids = fields.Many2many(
-        'res.partner',
-        string='Recipients',
-        help='Contacts of the invoice that will receive the email.',
-        context={'active_test': False},
-        check_company=True,
-    )
 
     @api.model
     def default_get(self, fields):
-        _logger.info("=== ACCOUNT.INVOICE.SEND DEFAULT_GET ===")
-        
         res = super().default_get(fields)
-        
+
         active_ids = self.env.context.get('active_ids', [])
-        
         if active_ids:
             moves = self.env['account.move'].with_context(
                 active_test=False
             ).browse(active_ids)
-            
-            partner_ids = []
-            for move in moves:
-                if move.partner_id:
-                    partner_ids.append(move.partner_id.id)
-            
-            if partner_ids:
-                res['partner_ids'] = [(6, 0, partner_ids)]
-                _logger.info(f"SET partner_ids: {res['partner_ids']}")
-        
+
+            partners = moves.mapped('partner_id').filtered(lambda p: p.email)
+
+            if partners:
+                res['partner_ids'] = [(6, 0, partners.ids)]
+                res['email_to'] = ", ".join(partners.mapped('email'))
+
         return res
 
     def action_send_and_print(self):
