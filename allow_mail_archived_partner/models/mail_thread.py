@@ -121,7 +121,7 @@ class MailThread(models.AbstractModel):
 
     def message_post(self, **kwargs):
         """
-        Override to ensure partner_ids are passed from context when empty.
+        Override to ensure partner_ids are passed correctly.
         """
         _logger.error("🔥🔥🔥 MailThread.message_post CALLED 🔥🔥🔥")
         _logger.error(f"🔥 Model: {self._name}")
@@ -133,14 +133,28 @@ class MailThread(models.AbstractModel):
         context_partner_ids = self.env.context.get('invoice_partner_ids', [])
         if context_partner_ids and not kwargs.get('partner_ids'):
             _logger.error(f"🔥 Using partner_ids from context: {context_partner_ids}")
-            kwargs['partner_ids'] = [(6, 0, context_partner_ids)]
+            # Convert to simple list of IDs, NOT ORM tuple format
+            kwargs['partner_ids'] = context_partner_ids
         
         # Also check for other sources of partner_ids
         if not kwargs.get('partner_ids'):
             # Try to get from the record itself
-            if self and hasattr(self, 'partner_id'):
+            if self and hasattr(self, 'partner_id') and self.partner_id:
                 _logger.error(f"🔥 Getting partner_id from record: {self.partner_id.id}")
-                kwargs['partner_ids'] = [(6, 0, [self.partner_id.id])]
+                kwargs['partner_ids'] = [self.partner_id.id]
+        
+        # Convert ORM tuple format to simple list if needed
+        if kwargs.get('partner_ids') and isinstance(kwargs['partner_ids'], list):
+            # Check if it's in ORM format [(6, 0, [id1, id2])]
+            if (len(kwargs['partner_ids']) == 1 and 
+                isinstance(kwargs['partner_ids'][0], (list, tuple)) and 
+                len(kwargs['partner_ids'][0]) == 3 and
+                kwargs['partner_ids'][0][0] == 6):
+                
+                # Extract IDs from ORM format
+                partner_ids = kwargs['partner_ids'][0][2]
+                _logger.error(f"🔥 Converting ORM format to simple list: {kwargs['partner_ids']} -> {partner_ids}")
+                kwargs['partner_ids'] = partner_ids
         
         _logger.error(f"🔥 Final partner_ids being passed: {kwargs.get('partner_ids', [])}")
         
