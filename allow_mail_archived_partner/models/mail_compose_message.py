@@ -1,37 +1,33 @@
-from odoo import models
+from odoo import models, api
 
 
 class MailComposeMessage(models.TransientModel):
     _inherit = "mail.compose.message"
 
-    def _get_default_recipients(self):
+    @api.model
+    def default_get(self, fields):
         """
-        This is the ONLY place that fills the 'To' field in Odoo 16.
-        We explicitly allow archived partners here for user-initiated sends.
+        For sales orders and other models using generic composer.
         """
-        recipients = super()._get_default_recipients()
-
+        res = super().default_get(fields)
+        
         model = self.env.context.get("active_model")
-        active_ids = self.env.context.get("active_ids") or []
-
-        if model == "account.move" and active_ids:
-            moves = self.env["account.move"].with_context(
+        res_id = self.env.context.get("active_id")
+        
+        # For sales orders
+        if model == "sale.order" and res_id:
+            order = self.env["sale.order"].with_context(
                 active_test=False
-            ).browse(active_ids)
-
-            partners = moves.mapped("partner_id").filtered(
-                lambda p: p.email
-            )
-
-            if partners:
-                recipients["partner_ids"] = [(6, 0, partners.ids)]
-                recipients["email_to"] = ", ".join(partners.mapped("email"))
-
-        return recipients
+            ).browse(res_id)
+            
+            if order.exists() and order.partner_id and order.partner_id.email:
+                res["partner_ids"] = [(6, 0, [order.partner_id.id])]
+        
+        return res
 
     def _prepare_mail_values(self, res_ids):
         """
-        Explicit user send → allow archived partners internally.
+        For explicit user sends from sales orders.
         """
         model = self.env.context.get("active_model") or self.model
 
@@ -46,3 +42,22 @@ class MailComposeMessage(models.TransientModel):
             )._prepare_mail_values(res_ids)
 
         return super()._prepare_mail_values(res_ids)
+
+    def _prepare_recipient_values(self, partner):
+        """
+        For sales orders and generic composers.
+        """
+        model = self.env.context.get("active_model") or self.model
+
+        if (
+            model in ["sale.order", "account.move"]
+            and self.env.context.get("include_archived_partners")
+            and partner
+        ):
+            # Use parent method with proper context
+            return super(
+                MailComposeMessage,
+                self.with_context(active_test=False)
+            )._prepare_recipient_values(partner)
+        
+        return super()._prepare_recipient_values(partner)
