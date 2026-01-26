@@ -8,43 +8,40 @@ class MailThread(models.AbstractModel):
     _inherit = "mail.thread"
 
     def _notify_thread(self, message, msg_vals=False, **kwargs):
-        """
-        Do NOT force notifications, do NOT set mail_notification=True,
-        do NOT globally disable active_test here.
-
-        The parent method decides whether a message should notify.
-        """
         return super()._notify_thread(message, msg_vals=msg_vals, **kwargs)
 
     def _notify_get_recipients(self, message, msg_vals, **kwargs):
         """
-        CRITICAL RULES:
-        - Never turn system notifications into outgoing emails.
-        - Never fabricate recipients when Odoo returns none.
-        - Never force notif='email'.
-
-        If archived partners should be allowed, that must be opt-in
-        via context['include_archived_partners'] and only for explicit user sends,
-        not tracking/system messages.
+        FIXED: Allow archived partners ONLY for explicit manual sends
         """
-        # 1) Never email system notifications (tracking, auto messages, etc.)
-        # These are the ones that caused "Re: Draft Bill ..." and odoobot@example.com.
-        if getattr(message, "message_type", None) == "notification":
-            return super()._notify_get_recipients(message, msg_vals, **kwargs)
+        # 1) BLOCK system notifications completely
+        is_system_notification = (
+            getattr(message, "message_type", None) == "notification" or
+            getattr(message, "author_id", False) and 
+            message.author_id == self.env.ref("base.partner_root", raise_if_not_found=False)
+        )
+        
+        if is_system_notification:
+            _logger.debug("Blocking system notification email")
+            recipients = super()._notify_get_recipients(message, msg_vals, **kwargs)
+            # Force inbox only, no email
+            for recipient in recipients:
+                recipient["notif"] = "inbox"
+            return recipients
 
-        # 2) Never auto-notify supplier bills. Vendor bills created from email/EDI
-        # must not trigger replies to vendors via chatter notifications.
-        # (If you DO want it for customer invoices, leave those alone.)
-        if self._name == "account.move":
-            # self can be multi; if any are supplier bills, just don't customize at all
-            # (safer than partial overriding recipient lists)
-            if any(m.move_type == "in_invoice" for m in self):
-                return super()._notify_get_recipients(message, msg_vals, **kwargs)
-
-        # 3) Default behavior first
-        recipients = super()._notify_get_recipients(message, msg_vals, **kwargs)
-
-        # 4) Do NOT fabricate recipients if empty.
-        # If you need archived partner support, handle it in explicit sending flows
-        # (compose + template), not here.
-        return recipients
+        # 2) Check if this is an EXPLICIT manual send
+        is_explicit_send = (
+            self.env.context.get("mail_notify_force") or
+            self.env.context.get("include_archived_partners")
+        )
+        
+        # 3) For explicit sends, allow archived partners
+        if is_explicit_send:
+            _logger.debug(f"Explicit send detected for {self._name}, allowing archived partners")
+            return super(
+                MailThread,
+                self.with_context(active_test=False)
+            )._notify_get_recipients(message, msg_vals, **kwargs)
+        
+        # 4) Default behavior for non-explicit sends
+        return super()._notify_get_recipients(message, msg_vals, **kwargs)
