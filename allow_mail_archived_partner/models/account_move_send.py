@@ -7,7 +7,7 @@ from odoo import models, api, fields
 class AccountInvoiceSend(models.TransientModel):
     _inherit = "account.invoice.send"
 
-    # OVERRIDE THE FIELD DEFINITION
+    # Allow archived partners to stay visible in the wizard
     partner_ids = fields.Many2many(
         'res.partner',
         string='Recipients',
@@ -18,32 +18,33 @@ class AccountInvoiceSend(models.TransientModel):
 
     @api.model
     def default_get(self, fields):
-        _logger.info("=== ACCOUNT.INVOICE.SEND DEFAULT_GET ===")
-        
         res = super().default_get(fields)
-        
+
         active_ids = self.env.context.get('active_ids', [])
-        
         if active_ids:
             moves = self.env['account.move'].with_context(
                 active_test=False
             ).browse(active_ids)
-            
-            partner_ids = []
-            for move in moves:
-                if move.partner_id:
-                    partner_ids.append(move.partner_id.id)
-            
-            if partner_ids:
-                res['partner_ids'] = [(6, 0, partner_ids)]
-                _logger.info(f"SET partner_ids: {res['partner_ids']}")
-        
+
+            partners = moves.mapped('partner_id').filtered(lambda p: p.email)
+            if partners:
+                res['partner_ids'] = [(6, 0, partners.ids)]
+
         return res
 
     def action_send_and_print(self):
-        _logger.info("=== ACCOUNT.INVOICE.SEND action_send_and_print ===")
-        _logger.info(f"Wizard ID: {self.id}, Partners: {self.partner_ids.ids}")
-        
+        """
+        Explicitly rebuild recipients from partner_ids to avoid
+        Odoo silently skipping send when archived partners are used.
+        """
+        self.ensure_one()
+
+        # Build email_to explicitly
+        emails = [p.email for p in self.partner_ids if p.email]
+        if not emails:
+            _logger.warning("No recipient emails found; skipping send.")
+            return {'type': 'ir.actions.act_window_close'}
+
         return super(
             AccountInvoiceSend,
             self.with_context(
@@ -52,23 +53,6 @@ class AccountInvoiceSend(models.TransientModel):
                 mail_notify_force=True,
                 force_email=True,
                 mark_invoice_as_sent=True,
+                email_to=",".join(emails),
             )
         ).action_send_and_print()
-
-    # LOG ALL POSSIBLE ACTIONS
-    def action_send(self):
-        _logger.info("=== ACCOUNT.INVOICE.SEND action_send ===")
-        return super().action_send()
-
-    def send_and_print_action(self):
-        _logger.info("=== ACCOUNT.INVOICE.SEND send_and_print_action ===")
-        return super().send_and_print_action()
-
-    def print_action(self):
-        _logger.info("=== ACCOUNT.INVOICE.SEND print_action ===")
-        return super().print_action()
-
-    @api.model
-    def action_send_and_print_invoices(self, invoices):
-        _logger.info("=== ACCOUNT.INVOICE.SEND action_send_and_print_invoices ===")
-        return super().action_send_and_print_invoices(invoices)
