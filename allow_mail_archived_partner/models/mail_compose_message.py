@@ -84,3 +84,14 @@ class MailComposeMessage(models.TransientModel):
         
         # Default behavior for active partners or non-manual sends
         return super()._prepare_recipient_values(partner)
+    
+    
+    def action_send_mail(self):
+        """
+        Override send action to log and ensure context.
+        """
+        _logger.debug("=== MAIL.COMPOSE.MESSAGE action_send_mail ===")
+        _logger.debug(f"Context: {dict(self.env.context)}")
+        _logger.debug(f"Partner IDs: {self.partner_ids.ids}")
+        
+        return super().action_send_mail()
