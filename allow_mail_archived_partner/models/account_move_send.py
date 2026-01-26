@@ -18,9 +18,8 @@ class AccountInvoiceSend(models.TransientModel):
 
     @api.model
     def default_get(self, fields):
-        """
-        Simply add archived partners to the wizard.
-        """
+        _logger.error("🔥 ACCOUNT.INVOICE.SEND default_get")
+        
         res = super().default_get(fields)
         
         active_ids = self.env.context.get('active_ids', [])
@@ -32,13 +31,32 @@ class AccountInvoiceSend(models.TransientModel):
             partners = moves.mapped('partner_id').filtered(lambda p: p.email)
             if partners:
                 res['partner_ids'] = [(6, 0, partners.ids)]
+                _logger.error(f"🔥 Set partner_ids: {res['partner_ids']}")
         
         return res
 
     def action_send_and_print(self):
-        """
-        Just pass context - let parent handle everything.
-        """
+        _logger.error("🔥🔥🔥 ACCOUNT.INVOICE.SEND action_send_and_print CALLED 🔥🔥🔥")
+        _logger.error(f"🔥 Wizard ID: {self.id}")
+        _logger.error(f"🔥 Partner IDs: {self.partner_ids.ids}")
+        _logger.error(f"🔥 Current context: {dict(self.env.context)}")
+        
+        # CRITICAL: Pass ALL required context flags
+        return super(
+            AccountInvoiceSend,
+            self.with_context(
+                active_test=False,                # For res.partner searches
+                include_archived_partners=True,   # For mail_thread.py
+                mail_notify_force=True,           # For mail_thread.py  
+                force_email=True,                 # Already present
+                mark_invoice_as_sent=True,        # Already present
+            )
+        ).action_send_and_print()
+
+    def _get_composer_values(self, res_ids, template):
+        _logger.error("🔥 ACCOUNT.INVOICE.SEND _get_composer_values")
+        
+        # Also pass context to composer
         return super(
             AccountInvoiceSend,
             self.with_context(
@@ -48,4 +66,4 @@ class AccountInvoiceSend(models.TransientModel):
                 force_email=True,
                 mark_invoice_as_sent=True,
             )
-        ).action_send_and_print()
+        )._get_composer_values(res_ids, template)
