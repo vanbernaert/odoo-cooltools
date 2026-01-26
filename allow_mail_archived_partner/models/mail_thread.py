@@ -11,26 +11,27 @@ class MailThread(models.AbstractModel):
 
     def _notify_thread(self, message, msg_vals=False, **kwargs):
         """
-        Log notification thread calls.
+        Keep the method to avoid TypeError, but keep it simple.
         """
-        _logger.error("🔥🔥🔥 MailThread._notify_thread CALLED 🔥🔥🔥")
-        _logger.error(f"🔥 Model: {self._name}")
-        _logger.error(f"🔥 Message type: {getattr(message, 'message_type', 'Unknown')}")
-        _logger.error(f"🔥 Message subject: {getattr(message, 'subject', 'No subject')}")
-        _logger.error(f"🔥 Context: {dict(self.env.context)}")
-        
-        # Check message attributes
-        _logger.error(f"🔥 Message author_id: {getattr(message, 'author_id', None)}")
-        _logger.error(f"🔥 Message partner_ids: {getattr(message, 'partner_ids', None)}")
-        _logger.error(f"🔥 Message record: {message.model if hasattr(message, 'model') else 'N/A'} {message.res_id if hasattr(message, 'res_id') else 'N/A'}")
-        
         return super()._notify_thread(message, msg_vals=msg_vals, **kwargs)
 
     def _notify_get_recipients(self, message, msg_vals, **kwargs):
         """
-        Force inclusion of archived partners for manual sends.
+        Force inclusion of archived partners for manual sends ONLY.
         """
         _logger.error("🔥🔥🔥🔥🔥 MailThread._notify_get_recipients CALLED 🔥🔥🔥🔥🔥")
+        
+        # CRITICAL: Check if this is a SYSTEM NOTIFICATION
+        is_system_message = (
+            getattr(message, "message_type", None) == "notification" or
+            getattr(message, "author_id", False) and 
+            message.author_id == self.env.ref("base.partner_root", raise_if_not_found=False) or
+            (msg_vals and msg_vals.get("message_type") == "notification")
+        )
+        
+        if is_system_message:
+            _logger.error("🔥 SYSTEM MESSAGE - returning parent result unchanged")
+            return super()._notify_get_recipients(message, msg_vals, **kwargs)
         
         # Check if this is a manual send
         is_manual_send = (
@@ -51,9 +52,6 @@ class MailThread(models.AbstractModel):
             partner_ids = message.partner_ids.ids
             _logger.error(f"🔥 Message has partners: {partner_ids}")
             
-            # Force the lookup of THESE partners (the recipients), not the author
-            # We need to ensure these partners are found even if archived
-            
             # Call parent with context that allows archived partners
             recipients = super(
                 MailThread,
@@ -61,17 +59,18 @@ class MailThread(models.AbstractModel):
                     active_test=False,
                     include_archived_partners=True,
                     mail_notify_force=True,
-                    # Add the partner IDs we want to look up
-                    force_notification_partner_ids=partner_ids,
                 )
             )._notify_get_recipients(message, msg_vals, **kwargs)
+            
+            # Ensure recipients is always a list
+            if recipients is None:
+                recipients = []
             
             _logger.error(f"🔥 Number of recipients found: {len(recipients)}")
             
             # If no recipients found, create them manually
             if len(recipients) == 0 and partner_ids:
                 _logger.error("🔥 No recipients found, creating manually")
-                recipients = []
                 for partner_id in partner_ids:
                     partner = self.env['res.partner'].with_context(
                         active_test=False
@@ -97,56 +96,10 @@ class MailThread(models.AbstractModel):
                         f"notif={recipient.get('notif')}, email={recipient.get('email')}")
             
             return recipients
-    
+        
+        # For non-manual sends, return parent result
+        _logger.error("🔥 Not a manual send - returning parent result")
+        return super()._notify_get_recipients(message, msg_vals, **kwargs)
 
-    def _message_post(self, **kwargs):
-        """
-        Log message post calls to trace email flow.
-        """
-        _logger.error("🔥🔥🔥 MailThread._message_post CALLED 🔥🔥🔥")
-        _logger.error(f"🔥 Model: {self._name}")
-        _logger.error(f"🔥 Kwargs keys: {kwargs.keys()}")
-        _logger.error(f"🔥 Context: {dict(self.env.context)}")
-        
-        return super()._message_post(**kwargs)
-
-    def message_post(self, **kwargs):
-        """
-        Override to ensure partner_ids are passed correctly.
-        """
-        _logger.error("🔥🔥🔥 MailThread.message_post CALLED 🔥🔥🔥")
-        _logger.error(f"🔥 Model: {self._name}")
-        _logger.error(f"🔥 Kwargs keys: {kwargs.keys()}")
-        _logger.error(f"🔥 Context: {dict(self.env.context)}")
-        _logger.error(f"🔥 Partner IDs in kwargs: {kwargs.get('partner_ids', [])}")
-        
-        # Check if we have partner_ids from context (passed from account.invoice.send)
-        context_partner_ids = self.env.context.get('invoice_partner_ids', [])
-        if context_partner_ids and not kwargs.get('partner_ids'):
-            _logger.error(f"🔥 Using partner_ids from context: {context_partner_ids}")
-            # Convert to simple list of IDs, NOT ORM tuple format
-            kwargs['partner_ids'] = context_partner_ids
-        
-        # Also check for other sources of partner_ids
-        if not kwargs.get('partner_ids'):
-            # Try to get from the record itself
-            if self and hasattr(self, 'partner_id') and self.partner_id:
-                _logger.error(f"🔥 Getting partner_id from record: {self.partner_id.id}")
-                kwargs['partner_ids'] = [self.partner_id.id]
-        
-        # Convert ORM tuple format to simple list if needed
-        if kwargs.get('partner_ids') and isinstance(kwargs['partner_ids'], list):
-            # Check if it's in ORM format [(6, 0, [id1, id2])]
-            if (len(kwargs['partner_ids']) == 1 and 
-                isinstance(kwargs['partner_ids'][0], (list, tuple)) and 
-                len(kwargs['partner_ids'][0]) == 3 and
-                kwargs['partner_ids'][0][0] == 6):
-                
-                # Extract IDs from ORM format
-                partner_ids = kwargs['partner_ids'][0][2]
-                _logger.error(f"🔥 Converting ORM format to simple list: {kwargs['partner_ids']} -> {partner_ids}")
-                kwargs['partner_ids'] = partner_ids
-        
-        _logger.error(f"🔥 Final partner_ids being passed: {kwargs.get('partner_ids', [])}")
-        
-        return super().message_post(**kwargs)
+    # Remove _message_post and message_post methods to avoid conflicts
+    # Keep only the essential methods
