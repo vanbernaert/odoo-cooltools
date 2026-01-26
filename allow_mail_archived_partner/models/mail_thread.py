@@ -13,11 +13,11 @@ class MailThread(models.AbstractModel):
         """
         Log notification thread calls.
         """
-        _logger.info("=== MailThread._notify_thread ===")
-        _logger.info(f"Model: {self._name}")
-        _logger.info(f"Message type: {getattr(message, 'message_type', 'Unknown')}")
-        _logger.info(f"Message subject: {getattr(message, 'subject', 'No subject')}")
-        _logger.info(f"Context: {dict(self.env.context)}")
+        _logger.error("🔥🔥🔥 MailThread._notify_thread CALLED 🔥🔥🔥")
+        _logger.error(f"🔥 Model: {self._name}")
+        _logger.error(f"🔥 Message type: {getattr(message, 'message_type', 'Unknown')}")
+        _logger.error(f"🔥 Message subject: {getattr(message, 'subject', 'No subject')}")
+        _logger.error(f"🔥 Context: {dict(self.env.context)}")
         
         return super()._notify_thread(message, msg_vals=msg_vals, **kwargs)
 
@@ -25,11 +25,11 @@ class MailThread(models.AbstractModel):
         """
         Allow archived partners ONLY for explicit manual sends.
         """
-        _logger.info("=== MailThread._notify_get_recipients ===")
-        _logger.info(f"Model: {self._name}")
-        _logger.info(f"Message type: {getattr(message, 'message_type', 'Unknown')}")
-        _logger.info(f"Message subject: {getattr(message, 'subject', 'No subject')}")
-        _logger.info(f"Full context: {dict(self.env.context)}")
+        _logger.error("🔥🔥🔥🔥🔥 MailThread._notify_get_recipients CALLED 🔥🔥🔥🔥🔥")
+        _logger.error(f"🔥 Model: {self._name}")
+        _logger.error(f"🔥 Message type: {getattr(message, 'message_type', 'Unknown')}")
+        _logger.error(f"🔥 Message subject: {getattr(message, 'subject', 'No subject')}")
+        _logger.error(f"🔥 Full context: {dict(self.env.context)}")
         
         # 1) Check if this is a MANUAL send (invoice wizard or compose message)
         is_manual_send = (
@@ -39,15 +39,15 @@ class MailThread(models.AbstractModel):
             self.env.context.get("mark_invoice_as_sent")    # From invoice wizard
         )
         
-        _logger.info(f"Is manual send? {is_manual_send}")
-        _logger.info(f"Context flags - mail_notify_force: {self.env.context.get('mail_notify_force')}")
-        _logger.info(f"Context flags - include_archived_partners: {self.env.context.get('include_archived_partners')}")
-        _logger.info(f"Context flags - force_email: {self.env.context.get('force_email')}")
-        _logger.info(f"Context flags - mark_invoice_as_sent: {self.env.context.get('mark_invoice_as_sent')}")
+        _logger.error(f"🔥 Is manual send? {is_manual_send}")
+        _logger.error(f"🔥 Context flags - mail_notify_force: {self.env.context.get('mail_notify_force')}")
+        _logger.error(f"🔥 Context flags - include_archived_partners: {self.env.context.get('include_archived_partners')}")
+        _logger.error(f"🔥 Context flags - force_email: {self.env.context.get('force_email')}")
+        _logger.error(f"🔥 Context flags - mark_invoice_as_sent: {self.env.context.get('mark_invoice_as_sent')}")
         
         # 2) For MANUAL sends, allow archived partners with full context
         if is_manual_send:
-            _logger.info("✓ MANUAL SEND DETECTED - Allowing archived partners")
+            _logger.error("🔥🔥🔥 ✓ MANUAL SEND DETECTED - Allowing archived partners 🔥🔥🔥")
             
             # Get recipients with context that allows archived partners
             recipients = super(
@@ -59,9 +59,9 @@ class MailThread(models.AbstractModel):
                 )
             )._notify_get_recipients(message, msg_vals, **kwargs)
             
-            _logger.info(f"Number of recipients found: {len(recipients)}")
+            _logger.error(f"🔥 Number of recipients found: {len(recipients)}")
             for i, recipient in enumerate(recipients):
-                _logger.info(f"Recipient {i}: partner_id={recipient.get('partner_id')}, "
+                _logger.error(f"🔥 Recipient {i}: partner_id={recipient.get('partner_id')}, "
                            f"notif={recipient.get('notif')}, email={recipient.get('email')}, "
                            f"groups={recipient.get('groups', [])}")
             
@@ -76,30 +76,42 @@ class MailThread(models.AbstractModel):
         )
         
         if is_system_notification:
-            _logger.info("✗ SYSTEM NOTIFICATION - Blocking emails, forcing inbox only")
+            _logger.error("🔥🔥🔥 ✗ SYSTEM NOTIFICATION - Blocking emails, forcing inbox only 🔥🔥🔥")
             recipients = super()._notify_get_recipients(message, msg_vals, **kwargs)
-            _logger.info(f"System notification recipients before blocking: {len(recipients)}")
+            _logger.error(f"🔥 System notification recipients before blocking: {len(recipients)}")
             
             # Force inbox only, no email
             for recipient in recipients:
                 recipient["notif"] = "inbox"
-                _logger.info(f"Blocked email for recipient: partner_id={recipient.get('partner_id')}")
+                _logger.error(f"🔥 Blocked email for recipient: partner_id={recipient.get('partner_id')}")
             
             return recipients
         
         # 4) Default behavior for non-manual, non-system sends
-        _logger.info("○ DEFAULT BEHAVIOR - No special handling")
+        _logger.error("🔥🔥🔥 ○ DEFAULT BEHAVIOR - No special handling 🔥🔥🔥")
         recipients = super()._notify_get_recipients(message, msg_vals, **kwargs)
-        _logger.info(f"Default recipients found: {len(recipients)}")
+        _logger.error(f"🔥 Default recipients found: {len(recipients)}")
         return recipients
 
     def _message_post(self, **kwargs):
         """
         Log message post calls to trace email flow.
         """
-        _logger.info("=== MailThread._message_post ===")
-        _logger.info(f"Model: {self._name}")
-        _logger.info(f"Kwargs: { {k: v for k, v in kwargs.items() if k != 'body'} }")
-        _logger.info(f"Context: {dict(self.env.context)}")
+        _logger.error("🔥🔥🔥 MailThread._message_post CALLED 🔥🔥🔥")
+        _logger.error(f"🔥 Model: {self._name}")
+        _logger.error(f"🔥 Kwargs keys: {kwargs.keys()}")
+        _logger.error(f"🔥 Context: {dict(self.env.context)}")
         
         return super()._message_post(**kwargs)
+
+    # Add message_post method too (called by chatter)
+    def message_post(self, **kwargs):
+        """
+        Log when messages are posted via chatter.
+        """
+        _logger.error("🔥🔥🔥 MailThread.message_post CALLED 🔥🔥🔥")
+        _logger.error(f"🔥 Model: {self._name}")
+        _logger.error(f"🔥 Kwargs keys: {kwargs.keys()}")
+        _logger.error(f"🔥 Context: {dict(self.env.context)}")
+        
+        return super().message_post(**kwargs)

@@ -88,10 +88,16 @@ class MailComposeMessage(models.TransientModel):
     
     def action_send_mail(self):
         """
-        Override send action to log and ensure context.
+        Log when email is actually sent.
         """
-        _logger.debug("=== MAIL.COMPOSE.MESSAGE action_send_mail ===")
-        _logger.debug(f"Context: {dict(self.env.context)}")
-        _logger.debug(f"Partner IDs: {self.partner_ids.ids}")
-        
+        _logger.info("🔥 MAIL.COMPOSE.MESSAGE action_send_mail")
+        _logger.info(f"Partner IDs: {self.partner_ids.ids}")
+        _logger.info(f"Context: {dict(self.env.context)}")
         return super().action_send_mail()
+
+    def _action_send_mail(self, auto_commit=False):
+        """
+        Another possible send method.
+        """
+        _logger.info("🔥 MAIL.COMPOSE.MESSAGE _action_send_mail")
+        return super()._action_send_mail(auto_commit=auto_commit)
