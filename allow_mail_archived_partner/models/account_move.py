@@ -1,3 +1,6 @@
+raise Exception("🔥 account_move.py LOADED 🔥")
+
+
 import logging
 
 _logger = logging.getLogger(__name__)
