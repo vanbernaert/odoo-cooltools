@@ -19,7 +19,7 @@
                         <!-- TRANSLATORS: Warning label for archived customers -->
                         <strong>Warning: </strong>
                         <!-- TRANSLATORS: Warning message for archived customers -->
-                        <span>This customer is archived.</span>
+                        <span>This customer is archived. An invoice can not be sent to an archived contact. Update the invoice with a new contact.</span>
                     </div>
 
 
