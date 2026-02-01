@@ -8,8 +8,8 @@ from odoo import models
 class AccountMove(models.Model):
     _inherit = "account.move"
 
-    def _send_invoice(self):
-        _logger.error("🔥🔥🔥 CUSTOM _send_invoice HIT 🔥🔥🔥")
-        _logger.error("🔥 Context: %s", dict(self.env.context))
+    def action_send_and_print(self):
+        _logger.error("🔥🔥🔥 CUSTOM action_send_and_print HIT 🔥🔥🔥")
+        _logger.error("🔥 Context at entry: %s", dict(self.env.context))
 
-        return super(AccountMove, self.with_context(active_test=False))._send_invoice()
+        return super().action_send_and_print()
