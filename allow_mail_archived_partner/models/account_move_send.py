@@ -1,6 +1,6 @@
 def action_send_and_print(self):
-    _logger.error("🔥 ACCOUNT.INVOICE.SEND action_send_and_print CALLED")
-    _logger.error("🔥 Wizard partner_ids: %s", self.partner_ids.ids)
+    # _logger.error("🔥 ACCOUNT.INVOICE.SEND action_send_and_print CALLED")
+    # _logger.error("🔥 Wizard partner_ids: %s", self.partner_ids.ids)
 
     ctx = dict(self.env.context)
 
