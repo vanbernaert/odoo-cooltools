@@ -4,10 +4,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Odoo Server 16.0\n"
+"Project-Id-Version: Odoo Server 16.0+e-20241212\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-15 18:10+0000\n"
-"PO-Revision-Date: 2026-01-15 19:15+0100\n"
+"POT-Creation-Date: 2026-02-01 18:48+0000\n"
+"PO-Revision-Date: 2026-02-02 00:06+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: nl\n"
@@ -19,6 +19,14 @@ msgstr ""
 
 #. module: archived_partner_show_warning
 #: model_terms:ir.ui.view,arch_db:archived_partner_show_warning.view_move_form_archived_warning
+msgid ""
+"<span>This customer is archived. An invoice CANNOT be sent to an archived "
+"contact. Update the invoice with a new contact.</span>"
+msgstr ""
+"<span>De klant is gearchiveerd. Een factuur kan ENKEL verstuurd worden naar "
+"een niet-gearchiveerd contact. Gelieve aan te passen.</span>"
+
+#. module: archived_partner_show_warning
 #: model_terms:ir.ui.view,arch_db:archived_partner_show_warning.view_order_form_archived_warning
 msgid "<span>This customer is archived.</span>"
 msgstr ""
