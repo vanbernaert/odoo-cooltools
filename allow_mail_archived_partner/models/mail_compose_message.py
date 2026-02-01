@@ -1,4 +1,5 @@
 import logging
+
 _logger = logging.getLogger(__name__)
 
 from odoo import models, api
@@ -9,95 +10,91 @@ class MailComposeMessage(models.TransientModel):
 
     @api.model
     def default_get(self, fields):
-        """
-        Pre-fill email wizard with archived partners for sales orders.
-        For invoices, this is handled by account.invoice.send.
-        """
         _logger.debug("=== MAIL.COMPOSE.MESSAGE DEFAULT_GET ===")
-        
+
         res = super().default_get(fields)
-        
-        model = self.env.context.get("active_model")
-        res_id = self.env.context.get("active_id")
-        
-        # Only handle sales orders here - invoices use account.invoice.send
+
+        ctx = self.env.context
+        model = ctx.get("active_model")
+        res_id = ctx.get("active_id")
+
+        # -------------------------------------------------
+        # 1️⃣ SALE ORDERS (your existing logic, unchanged)
+        # -------------------------------------------------
         if model == "sale.order" and res_id:
             _logger.debug(f"Processing sales order {res_id}")
-            
-            # Find order with archived partners allowed
-            order = self.env["sale.order"].with_context(
-                active_test=False
-            ).browse(res_id)
-            
+
+            order = (
+                self.env["sale.order"].with_context(active_test=False).browse(res_id)
+            )
+
             if order.exists() and order.partner_id:
                 res["partner_ids"] = [(6, 0, [order.partner_id.id])]
-                _logger.debug(f"Pre-filled archived partner {order.partner_id.id} for sales order")
-        
+                _logger.debug(
+                    f"Pre-filled archived partner {order.partner_id.id} for sales order"
+                )
+
+        # -------------------------------------------------
+        # 2️⃣ INVOICES (THIS WAS MISSING)
+        # -------------------------------------------------
+        default_partner_ids = ctx.get("default_partner_ids")
+        if model == "account.move" and default_partner_ids:
+            partner_ids = []
+            for cmd in default_partner_ids:
+                if isinstance(cmd, (list, tuple)) and cmd[0] == 6:
+                    partner_ids = cmd[2]
+
+            if partner_ids:
+                partners = (
+                    self.env["res.partner"]
+                    .with_context(active_test=False)
+                    .browse(partner_ids)
+                )
+
+                if partners:
+                    res["partner_ids"] = [(6, 0, partners.ids)]
+                    _logger.error(
+                        "🔥 Restored archived invoice partners in mail.compose.message.default_get: %s",
+                        partners.ids,
+                    )
+
         return res
 
     def _prepare_mail_values(self, res_ids):
-        """
-        Set context flags for manual email sends.
-        This ensures archived partners are allowed during email sending.
-        """
         _logger.debug("=== _prepare_mail_values ===")
-        
+
         model = self.env.context.get("active_model") or self.model
-        
-        # Only for sales orders and account moves (invoices)
-        # Note: account.invoice.send should handle invoices, but keep this as fallback
+
         if model in ["sale.order", "account.move"]:
-            _logger.debug(f"Setting context for {model} to allow archived partners")
             return super(
                 MailComposeMessage,
                 self.with_context(
-                    active_test=False,           # Allow finding archived partners
-                    include_archived_partners=True,  # Tell other methods
-                    mail_notify_force=True,      # Mark as explicit user action
-                )
+                    active_test=False,
+                    include_archived_partners=True,
+                    mail_notify_force=True,
+                ),
             )._prepare_mail_values(res_ids)
-        
+
         return super()._prepare_mail_values(res_ids)
 
     def _prepare_recipient_values(self, partner):
-        """
-        Handle archived partners for manual email sends.
-        This is called for each recipient when building the email.
-        """
-        # Check if we're in a manual send context
         is_manual_send = (
-            self.env.context.get("include_archived_partners") or
-            self.env.context.get("mail_notify_force") or
-            self.env.context.get("force_email") or          # From invoice wizard
-            self.env.context.get("mark_invoice_as_sent")    # From invoice wizard
+            self.env.context.get("include_archived_partners")
+            or self.env.context.get("mail_notify_force")
+            or self.env.context.get("force_email")
+            or self.env.context.get("mark_invoice_as_sent")
         )
-        
-        # If it's a manual send and partner is archived, include them
+
         if is_manual_send and partner and not partner.active:
-            _logger.debug(f"Including archived partner {partner.name} in email")
             return {
                 "partner_id": partner.id,
                 "email": partner.email,
                 "name": partner.name,
                 "lang": partner.lang or self.env.context.get("lang") or "en_US",
             }
-        
-        # Default behavior for active partners or non-manual sends
+
         return super()._prepare_recipient_values(partner)
-    
-    
-    def action_send_mail(self):
-        """
-        Log when email is actually sent.
-        """
-        _logger.info("🔥 MAIL.COMPOSE.MESSAGE action_send_mail")
-        _logger.info(f"Partner IDs: {self.partner_ids.ids}")
-        _logger.info(f"Context: {dict(self.env.context)}")
-        return super().action_send_mail()
 
     def _action_send_mail(self, auto_commit=False):
-        """
-        Another possible send method.
-        """
         _logger.info("🔥 MAIL.COMPOSE.MESSAGE _action_send_mail")
         return super()._action_send_mail(auto_commit=auto_commit)
