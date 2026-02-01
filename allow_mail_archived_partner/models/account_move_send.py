@@ -1,14 +1,15 @@
 def action_send_and_print(self):
-    # _logger.error("🔥 ACCOUNT.INVOICE.SEND action_send_and_print CALLED")
-    # _logger.error("🔥 Wizard partner_ids: %s", self.partner_ids.ids)
+    _logger.error("🔥 ACCOUNT.INVOICE.SEND action_send_and_print CALLED")
+    _logger.error("🔥 Wizard partner_ids: %s", self.partner_ids.ids)
 
     ctx = dict(self.env.context)
 
     if self.partner_ids:
         ctx.update(
             {
-                # 🔥 THIS is what mail.compose.message actually reads
+                # 🔥 REQUIRED: otherwise archived partners are dropped
                 "default_partner_ids": [(6, 0, self.partner_ids.ids)],
+                "active_test": False,
             }
         )
 
@@ -16,7 +17,6 @@ def action_send_and_print(self):
         AccountInvoiceSend,
         self.with_context(
             ctx,
-            active_test=False,
             include_archived_partners=True,
             mail_notify_force=True,
             force_email=True,
