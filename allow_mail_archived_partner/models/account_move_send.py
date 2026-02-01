@@ -1,83 +1,25 @@
-import logging
+def action_send_and_print(self):
+    _logger.error("🔥 ACCOUNT.INVOICE.SEND action_send_and_print CALLED")
+    _logger.error("🔥 Wizard partner_ids: %s", self.partner_ids.ids)
 
-_logger = logging.getLogger(__name__)
+    ctx = dict(self.env.context)
 
-from odoo import models, api, fields
+    if self.partner_ids:
+        ctx.update(
+            {
+                # 🔥 THIS is what mail.compose.message actually reads
+                "default_partner_ids": [(6, 0, self.partner_ids.ids)],
+            }
+        )
 
-
-class AccountInvoiceSend(models.TransientModel):
-    _inherit = "account.invoice.send"
-
-    # Allow archived partners to remain selectable
-    partner_ids = fields.Many2many(
-        "res.partner",
-        string="Recipients",
-        help="Contacts of the invoice that will receive the email.",
-        context={"active_test": False},
-        check_company=True,
-    )
-
-    @api.model
-    def default_get(self, fields):
-        _logger.error("🔥 ACCOUNT.INVOICE.SEND default_get")
-
-        res = super().default_get(fields)
-
-        active_ids = self.env.context.get("active_ids", [])
-        if active_ids:
-            moves = (
-                self.env["account.move"]
-                .with_context(active_test=False)
-                .browse(active_ids)
-            )
-
-            partners = moves.mapped("partner_id").filtered(lambda p: p.email)
-            if partners:
-                res["partner_ids"] = [(6, 0, partners.ids)]
-                _logger.error(f"🔥 Set partner_ids: {res['partner_ids']}")
-
-        return res
-
-    def action_send_and_print(self):
-        _logger.error("🔥🔥🔥 ACCOUNT.INVOICE.SEND action_send_and_print CALLED 🔥🔥🔥")
-        _logger.error(f"🔥 Wizard ID: {self.id}")
-        _logger.error(
-            f"🔥 Partner IDs: {self.partner_ids.ids}"
-        )  # This returns a list of IDs
-
-        # Call parent with context AND ensure partner_ids are passed
-        return super(
-            AccountInvoiceSend,
-            self.with_context(
-                active_test=False,
-                include_archived_partners=True,
-                mail_notify_force=True,
-                force_email=True,
-                mark_invoice_as_sent=True,
-                # Pass simple list of IDs, NOT ORM tuple format
-                invoice_partner_ids=self.partner_ids.ids if self.partner_ids else [],
-            ),
-        ).action_send_and_print()
-
-    def _get_composer_values(self, res_ids, template):
-        _logger.error("🔥 ACCOUNT.INVOICE.SEND _get_composer_values")
-
-        values = super(
-            AccountInvoiceSend,
-            self.with_context(
-                active_test=False,
-                include_archived_partners=True,
-                mail_notify_force=True,
-                force_email=True,
-                mark_invoice_as_sent=True,
-            ),
-        )._get_composer_values(res_ids, template)
-
-        # 🔥 THIS IS THE CRITICAL PART
-        if self.partner_ids:
-            values["partner_ids"] = [(6, 0, self.partner_ids.ids)]
-            _logger.error(
-                "🔥 Injected partner_ids into composer: %s", self.partner_ids.ids
-            )
-
-        return values
+    return super(
+        AccountInvoiceSend,
+        self.with_context(
+            ctx,
+            active_test=False,
+            include_archived_partners=True,
+            mail_notify_force=True,
+            force_email=True,
+            mark_invoice_as_sent=True,
+        ),
+    ).action_send_and_print()
