@@ -8,7 +8,6 @@ Copies the selected customer (Klant) directly to the invoice address
 on sale orders and invoices, without collapsing to the commercial partner.
 """,
     "depends": [
-        "account",
         "sale",
     ],
     "installable": True,
