@@ -36,3 +36,33 @@ class AccountEdiCommon(models.AbstractModel):
             invoice_line_form.tax_ids = mapped_taxes
 
         return logs
+
+    def _import_fill_invoice_allowance_charge(
+        self, tree, invoice, journal, qty_factor
+    ):
+        """
+        Override to apply the supplier's fiscal position tax mapping to
+        document-level allowance/charge lines (e.g. kortingen/toeslagen).
+
+        These lines are created via a separate code path that does a raw
+        tax search by percentage without applying fiscal position. We
+        post-process the created lines to correct their taxes.
+        """
+        logs = super()._import_fill_invoice_allowance_charge(
+            tree, invoice, journal, qty_factor
+        )
+
+        fiscal_position = invoice.fiscal_position_id
+        if not fiscal_position:
+            return logs
+
+        # Allowance/charge lines are created with sequence=0
+        allowance_lines = invoice.invoice_line_ids.filtered(
+            lambda l: l.sequence == 0 and l.tax_ids
+        )
+        for line in allowance_lines:
+            mapped_taxes = fiscal_position.map_tax(line.tax_ids)
+            if mapped_taxes != line.tax_ids:
+                line.tax_ids = mapped_taxes
+
+        return logs
