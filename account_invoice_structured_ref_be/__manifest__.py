@@ -4,7 +4,7 @@
     'version': '16.0.1.0.0',
     'summary': 'Adds "Based on Invoice Number (BE Structured)" communication type for Belgian OGM/VCS references',
     'category': 'Accounting/Localizations',
-    'author': 'Busenco',
+    'author': 'Van Bernaert',
     'depends': ['account', 'l10n_be'],
     'data': [],
     'installable': True,
