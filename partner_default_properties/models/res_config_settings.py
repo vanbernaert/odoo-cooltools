@@ -11,34 +11,25 @@ class ResConfigSettings(models.TransientModel):
     customer_fiscal_position_id = fields.Many2one(
         comodel_name='account.fiscal.position',
         string='Default Fiscal Position',
-        compute='_compute_customer_fiscal_position_id',
-        inverse='_set_customer_fiscal_position_id',
     )
     customer_payment_term_id = fields.Many2one(
         comodel_name='account.payment.term',
         string='Default Payment Terms',
-        compute='_compute_customer_payment_term_id',
-        inverse='_set_customer_payment_term_id',
     )
 
-    def _compute_customer_fiscal_position_id(self):
+    def get_values(self):
+        res = super().get_values()
         ICP = self.env['ir.config_parameter'].sudo()
-        param = ICP.get_param(PARAM_FISCAL_POSITION)
-        for rec in self:
-            rec.customer_fiscal_position_id = int(param) if param else False
+        fp_id = ICP.get_param(PARAM_FISCAL_POSITION)
+        pt_id = ICP.get_param(PARAM_PAYMENT_TERM)
+        res.update({
+            'customer_fiscal_position_id': int(fp_id) if fp_id else False,
+            'customer_payment_term_id': int(pt_id) if pt_id else False,
+        })
+        return res
 
-    def _set_customer_fiscal_position_id(self):
+    def set_values(self):
+        super().set_values()
         ICP = self.env['ir.config_parameter'].sudo()
-        for rec in self:
-            ICP.set_param(PARAM_FISCAL_POSITION, rec.customer_fiscal_position_id.id or False)
-
-    def _compute_customer_payment_term_id(self):
-        ICP = self.env['ir.config_parameter'].sudo()
-        param = ICP.get_param(PARAM_PAYMENT_TERM)
-        for rec in self:
-            rec.customer_payment_term_id = int(param) if param else False
-
-    def _set_customer_payment_term_id(self):
-        ICP = self.env['ir.config_parameter'].sudo()
-        for rec in self:
-            ICP.set_param(PARAM_PAYMENT_TERM, rec.customer_payment_term_id.id or False)
+        ICP.set_param(PARAM_FISCAL_POSITION, self.customer_fiscal_position_id.id or False)
+        ICP.set_param(PARAM_PAYMENT_TERM, self.customer_payment_term_id.id or False)
