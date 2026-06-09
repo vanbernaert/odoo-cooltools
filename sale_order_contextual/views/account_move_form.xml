@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="sale_order_contextual_view_form" model="ir.ui.view">
-        <field name="name">sale.order.contextual.note.form</field>
-        <field name="model">sale.order</field>
-        <field name="inherit_id" ref="sale.view_order_form"/>
+    <record id="account_move_contextual_note_form" model="ir.ui.view">
+        <field name="name">account.move.contextual.note.form</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//group[@name='sale_header']" position="after">
+            <xpath expr="//notebook" position="before">
                 <separator string="Contextual"/>
                 <group>
                     <field name="contextual_note" string="Note" colspan="2"/>
