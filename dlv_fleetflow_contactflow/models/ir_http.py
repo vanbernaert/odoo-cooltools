@@ -43,4 +43,4 @@ class IrHttp(models.AbstractModel):
             _logger.warning("FleetFlow API: invalid API key")
             raise Unauthorized("Invalid API key")
 
-        request.uid = user_id
+        request.update_env(user=user_id)
