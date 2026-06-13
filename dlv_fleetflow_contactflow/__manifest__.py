@@ -3,14 +3,15 @@
     "name": "FleetFlow ContactFlow API",
     "summary": "Expose Busenco trip drivers as a ContactFlow JSON API "
                "secured by an API key.",
-    "description": """
-        FleetFlow ContactFlow API
-        =========================
+    'description': """
+Exposes trip.driver records as a JSON feed endpoint, consumed by the
+WordPress dlv-odoo-contactflow plugin.
 
-        Provides a token-authenticated HTTP endpoint that returns the active
-        trip drivers (busenco_custom ``trip.driver``) as JSON contacts,
-        optionally filtered by office location.
-    """,
+Endpoint: GET /fleetflow/contactflow/drivers?location=<location_name>
+
+Authentication: Bearer token via Odoo native API keys.
+Generate a key via Settings > Users > (user) > API Keys > New.
+""",
     "author": "bv Domus La Vila",
     "website": "https://domuslavila.eu",
     "category": "Technical",
