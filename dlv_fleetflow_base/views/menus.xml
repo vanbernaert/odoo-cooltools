@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="fleetflow_action_config_settings" model="ir.actions.act_window">
+        <field name="name">FleetFlow</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="target">inline</field>
+        <field name="context">{'module': 'dlv_fleetflow_base'}</field>
+    </record>
+
+    <menuitem id="fleetflow_menu_config_settings"
+              name="FleetFlow"
+              parent="base_setup.menu_all_settings"
+              sequence="70"
+              action="fleetflow_action_config_settings"/>
+
+</odoo>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="fleetflow_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.fleetflow</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base_setup.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('settings')]" position="inside">
+                <div class="app_settings_block" data-string="FleetFlow" string="FleetFlow"
+                     data-key="dlv_fleetflow_base" groups="base.group_system">
+                    <h2>FleetFlow</h2>
+                    <notebook/>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
