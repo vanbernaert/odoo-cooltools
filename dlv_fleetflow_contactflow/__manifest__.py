@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 {
     "name": "FleetFlow ContactFlow API",
-    "summary": "Expose Busenco trip drivers as a ContactFlow JSON API "
-               "secured by an API key.",
+    "summary": "Generic contact sync feed endpoints for WordPress "
+               "ContactFlow integration",
     'description': """
 Exposes trip.driver records as a JSON feed endpoint, consumed by the
 WordPress dlv-odoo-contactflow plugin.
@@ -17,8 +17,10 @@ Generate a key via Settings > Users > (user) > API Keys > New.
     "category": "Technical",
     "version": "16.0.1.0.0",
     "license": "LGPL-3",
-    "depends": ["base", "busenco_custom"],
-    "data": [],
+    "depends": ["base", "base_setup", "dlv_fleetflow_base"],
+    "data": [
+        "views/res_config_settings_views.xml",
+    ],
     "installable": True,
     "application": False,
     "auto_install": False,

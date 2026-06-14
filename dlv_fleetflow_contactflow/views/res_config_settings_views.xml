@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="fleetflow_contactflow_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.fleetflow.contactflow</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base_setup.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@data-key='dlv_fleetflow_base']//notebook" position="inside">
+                <page string="ContactFlow API">
+                    <field name="fleetflow_busenco_installed" invisible="1"/>
+
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 o_setting_box">
+                            <div class="o_setting_right_pane">
+
+                                <span class="o_form_label">Available Endpoints</span>
+                                <div class="text-muted mt8">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Endpoint</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td><code>/fleetflow/contactflow/customers</code></td>
+                                                <td>Active</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>/fleetflow/contactflow/suppliers</code></td>
+                                                <td>Active</td>
+                                            </tr>
+                                            <tr>
+                                                <td><code>/fleetflow/contactflow/drivers?location=X</code></td>
+                                                <td>see below</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <span class="o_form_label mt16 d-block">Bus Drivers Endpoint</span>
+                                <div class="alert alert-success mt8" role="alert"
+                                     attrs="{'invisible': [('fleetflow_busenco_installed', '=', False)]}">
+                                    busenco_custom is installed. The drivers endpoint is active.
+                                </div>
+                                <div class="alert alert-warning mt8" role="alert"
+                                     attrs="{'invisible': [('fleetflow_busenco_installed', '=', True)]}">
+                                    The drivers endpoint requires the busenco_custom addon.
+                                    Install busenco_custom to enable:
+                                    <code>GET /fleetflow/contactflow/drivers?location=&lt;location&gt;</code>
+                                </div>
+
+                                <span class="o_form_label mt16 d-block">Authentication</span>
+                                <div class="text-muted mt8">
+                                    Use a Bearer token. Generate via
+                                    Settings &gt; Users &gt; (user) &gt; API Keys &gt; New API Key
+                                </div>
+
+                                <span class="o_form_label mt16 d-block">Response format</span>
+                                <div class="text-muted mt8">
+                                    <code>{ "contacts": [ { "id", "first_name", "last_name", "phone", "mobile", "email" } ] }</code>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

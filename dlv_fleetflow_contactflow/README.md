@@ -2,60 +2,43 @@
 
 ## Overview
 
-FleetFlow ContactFlow API exposes the active trip drivers managed by the
-`busenco_custom` addon (`trip.driver`) over a token-authenticated HTTP endpoint
-that returns JSON contacts. It is designed to feed external systems — such as a
-WordPress ContactFlow integration — with an always-current driver contact list,
-optionally filtered by office location.
+`dlv_fleetflow_contactflow` is a generic contact sync feed addon. It provides
+token-authenticated JSON endpoints consumed by the WordPress
+`dlv-odoo-contactflow` plugin to keep an external contact list in sync with
+Odoo.
 
-Driver names are stored as a single `name` field on `trip.driver`. The endpoint
-splits `trip.driver.name` on the **first space** into `first_name` and
-`last_name`:
-
-- `"Jan Peeters"` → `first_name="Jan"`, `last_name="Peeters"`
-- `"Jan Van den Berg"` → `first_name="Jan"`, `last_name="Van den Berg"`
-- `"Jan"` (no space) → `first_name="Jan"`, `last_name=""`
+The **customers** and **suppliers** endpoints (backed by `res.partner`) are
+always available. The **drivers** endpoint requires the `busenco_custom` addon
+(which provides the `trip.driver` model); when `busenco_custom` is not
+installed, the drivers endpoint responds with a 404 JSON error and the FleetFlow
+Settings tab shows a warning.
 
 ## Dependencies
 
 - `base`
-- `busenco_custom` (provides the `trip.driver` model)
+- `base_setup`
+- `dlv_fleetflow_base`
+- `busenco_custom` *(optional — only needed for the drivers endpoint)*
 
-## Endpoint
+## Endpoints
 
-### URL
+| Endpoint | Requires |
+|----------|----------|
+| `GET /fleetflow/contactflow/customers` | always active |
+| `GET /fleetflow/contactflow/suppliers` | always active |
+| `GET /fleetflow/contactflow/drivers?location=X` | `busenco_custom` installed |
 
-```
-GET /fleetflow/contactflow/drivers
-```
+## Authentication
 
-Optional query parameter:
-
-| Param | Description |
-|-------|-------------|
-| `location` | Filter drivers on `location_id.name` (exact match) |
-
-Example:
-
-```
-GET /fleetflow/contactflow/drivers?location=Antwerpen
-```
-
-### Authentication
-
-Bearer token using Odoo's **native API keys**.
+Bearer token using Odoo's native API keys:
 
 ```
 Authorization: Bearer <your_api_key>
 ```
 
-The key is validated against `res.users.apikeys` with the `rpc` scope. A missing,
-malformed, or invalid key returns **401 Unauthorized**.
+Generate a key via **Settings → Users → (user) → API Keys → New API Key**.
 
-Create a key in Odoo: **Settings → Users → (select user) → Account Security →
-API Keys → New API Key**.
-
-### Response format
+## Response format
 
 `Content-Type: application/json;charset=utf-8`
 
@@ -74,53 +57,37 @@ API Keys → New API Key**.
 }
 ```
 
-On error the endpoint returns **500** with:
+## Name splitting
 
-```json
-{ "error": "<message>" }
-```
+Contacts expose separate `first_name` / `last_name` fields, derived from a
+single source name field:
 
-### Field mapping
+- **People** (drivers, individual partners): the name is split on the **first
+  space** — `"Jan Van den Berg"` → `first_name="Jan"`, `last_name="Van den Berg"`.
+- **Companies** (`is_company = True`): `first_name` is empty and `last_name`
+  holds the full company name.
 
-| JSON field   | Source (`trip.driver`)        | Notes |
-|--------------|-------------------------------|-------|
-| `id`         | `id`                          | Cast to string |
-| `first_name` | `name` (before first space)   | Split on first space |
-| `last_name`  | `name` (after first space)    | Remainder after first space; `""` if none |
-| `phone`      | `phone_number`                | `""` if empty |
-| `mobile`     | `phone_number2`               | `""` if empty |
-| `email`      | `email`                       | `""` if empty |
+## Settings
 
-Only drivers with `active = True` are returned, ordered by `name` ascending.
+A **ContactFlow API** tab is available under **Settings → FleetFlow**. It shows
+the live status of each endpoint, authentication instructions, and the response
+format. When `busenco_custom` is installed the drivers endpoint is reported as
+active; otherwise a warning explains how to enable it.
+
+## Installation
+
+1. Install `dlv_fleetflow_base` first (it owns the FleetFlow Settings entry).
+2. Install `dlv_fleetflow_contactflow`.
+3. *(Optional)* Install `busenco_custom` to enable the drivers endpoint.
+4. Create an API key for the user that should own the feed
+   (**Settings → Users → API Keys → New API Key**).
 
 ## WordPress setup
 
-1. Store the Odoo base URL and the API key in your WordPress configuration
-   (e.g. as constants in `wp-config.php` or via your integration plugin's
-   settings), never hard-coded in templates.
-2. Make a server-side `GET` request to
-   `https://<odoo-host>/fleetflow/contactflow/drivers` with the header
-   `Authorization: Bearer <your_api_key>`.
-3. Add the `location` query parameter if you only want drivers for a specific
-   office location.
-4. Parse the `contacts` array from the JSON response and render it through your
-   ContactFlow templates.
-5. Cache the response (e.g. a transient) to avoid polling Odoo on every page
-   load.
+In the `dlv-odoo-contactflow` WordPress plugin, configure a sync profile with:
 
-## Installation steps
+- the endpoint URL (e.g. `https://<odoo-host>/fleetflow/contactflow/customers`),
+- the Bearer token generated above.
 
-1. Copy the `dlv_fleetflow_contactflow` directory into your Odoo addons path
-   (alongside `busenco_custom`).
-2. Restart the Odoo server.
-3. Enable **Developer Mode** and update the apps list
-   (**Apps → Update Apps List**).
-4. Search for **FleetFlow ContactFlow API** and click **Install**.
-5. Create an API key for the user that should own the feed
-   (**Settings → Users → Account Security → API Keys → New API Key**).
-6. Test the endpoint:
-
-   ```bash
-   curl -H "Authorization: Bearer <your_api_key>" \
-     "https://<odoo-host>/fleetflow/contactflow/drivers"
-   ```
+The plugin polls the endpoint and maps the returned `contacts` array into its
+ContactFlow records.
