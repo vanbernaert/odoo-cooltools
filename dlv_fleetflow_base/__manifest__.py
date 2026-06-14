@@ -10,7 +10,6 @@
     "depends": ["base", "base_setup"],
     "data": [
         "views/res_config_settings_views.xml",
-        "views/menus.xml",
     ],
     "installable": True,
     "application": False,

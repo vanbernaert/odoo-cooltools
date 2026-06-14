@@ -7,9 +7,10 @@
         <field name="inherit_id" ref="base_setup.res_config_settings_view_form"/>
         <field name="arch" type="xml">
             <xpath expr="//div[hasclass('settings')]" position="inside">
-                <div class="app_settings_block" data-string="FleetFlow" string="FleetFlow"
-                     data-key="dlv_fleetflow_base" groups="base.group_system">
-                    <h2>FleetFlow</h2>
+                <div class="app_settings_block"
+                     data-string="FleetFlow"
+                     data-key="dlv_fleetflow_base"
+                     groups="base.group_system">
                     <notebook/>
                 </div>
             </xpath>
