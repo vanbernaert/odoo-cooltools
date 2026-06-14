@@ -8,9 +8,11 @@
         <field name="arch" type="xml">
             <xpath expr="//div[hasclass('settings')]" position="inside">
                 <div class="app_settings_block"
+                     string="FleetFlow"
                      data-string="FleetFlow"
                      data-key="dlv_fleetflow_base"
                      groups="base.group_system">
+                    <img src="/dlv_fleetflow_base/static/img/icon.png" alt="FleetFlow"/>
                     <notebook/>
                 </div>
             </xpath>
